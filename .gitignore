@@ -7,3 +7,5 @@ __pycache__/
 
 # Ignore user data
 users.json
+med_cache.json
+search_history.json
