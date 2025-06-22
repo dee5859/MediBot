@@ -1,13 +1,19 @@
-# auth.py
+# src/auth.py
 import hashlib
 import json
 import getpass
 import os
+import random
+import string
 from datetime import datetime
 
 USER_FILE = "users.json"
 
-# Password policy configuration - using requested name
+# Admin credentials - CHANGE BEFORE DEPLOYMENT!
+ADMIN_USERNAME = "medadmin"
+ADMIN_PASSWORD = "Deeadmin@123"  # Change to a strong password
+
+# Password policy configuration
 Password_requirements = {
     'min_length': 8,
     'require_upper': True,
@@ -64,16 +70,25 @@ def show_password_requirements():
     
     print()  # Empty line for spacing
 
-def register_user():
-    """Register a new user with password hashing"""
+def admin_login():
+    """Admin authentication"""
     print("\n" + "=" * 40)
-    print("NEW USER REGISTRATION".center(40))
+    print("ADMIN LOGIN".center(40))
+    print("=" * 40)
+    username = input("Admin Username: ").strip()
+    password = getpass.getpass("Admin Password: ")
+    return username == ADMIN_USERNAME and password == ADMIN_PASSWORD
+
+def create_user(admin_username):
+    """Admin function to create new users"""
+    print("\n" + "=" * 40)
+    print("CREATE NEW USER".center(40))
     print("=" * 40)
     
     # Get username
-    username = input("Choose a username: ").strip()
+    username = input("Enter new username: ").strip()
     
-    # Load existing users or create empty dictionary
+    # Load existing users
     users = {}
     if os.path.exists(USER_FILE):
         try:
@@ -87,46 +102,92 @@ def register_user():
         print(f"Username '{username}' already exists!")
         return False
     
-    # Show password requirements
-    show_password_requirements()
+    # Generate a random password
+    password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+    print(f"\nGenerated password: {password}")
+    input("Press Enter to continue...")
     
-    # Get password securely
-    while True:
-        password = getpass.getpass("Create password: ")
-        confirm = getpass.getpass("Confirm password: ")
-        
-        # Check if passwords match
-        if password != confirm:
-            print("Passwords don't match. Try again.")
-            continue
-            
-        # Validate password strength
-        validation_errors = validate_password(password)
-        
-        if not validation_errors:
-            break  # Password is valid
-            
-        print("\nPassword does not meet requirements:")
-        for error in validation_errors:
-            print(f"- {error}")
-        print("Please try again.\n")
-    
-    # Hash password using SHA-256
+    # Hash password
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
     
-    # Create user entry with login history
+    # Create user entry
     users[username] = {
         'password_hash': hashed_password,
         'created_at': datetime.now().isoformat(),
-        'login_history': []
+        'created_by': admin_username,
+        'login_history': [],
+        'password_changed': False  # Track if user changed password
     }
     
-    # Save new user
+    # Save to file
     with open(USER_FILE, 'w') as file:
         json.dump(users, file, indent=4)
     
-    print("Registration successful!")
+    print(f"\nUser '{username}' created successfully!")
     return True
+
+def reset_user_password(admin_username):
+    if not admin_login():
+        print("\nAdmin login failed!")
+        return False
+    print("\n" + "="*40)
+    print("Reset user password".center(40))
+    print("="*40)
+
+    username = input("Enter the username to resent password:").strip()
+
+    users={}
+    if os.path.exists(USER_FILE):
+        try:
+            with open(USER_FILE, 'r') as file:
+                users= json.load(file)
+        except json.JSONDecodeError:
+            print("User file corrupted.")
+            return False
+        
+    if username not in users:
+        print(f"User '{username}' does not exist!")
+        return False
+        
+    new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+    print(f"\nNew Password for {username} : {new_password}")
+
+    hashed_password = hashlib.sha256(new_password.encode()).hexdigest()
+    users[username]['password_hash'] = hashed_password
+    users[username]['password_changed'] = False
+    if 'password_resets' not in users[username]:
+        users[username]['password_resets'] = []
+    users[username]['password_resets'].append({
+        'reset_by': admin_username,
+        'timestamp': datetime.now().isoformat()
+    })
+    
+    # Save to file
+    with open(USER_FILE, 'w') as file:
+        json.dump(users, file, indent=4)
+    
+    print(f"\nPassword for '{username}' has been reset successfully!")
+    return True
+
+def get_login_history(username):
+    """Retrieve login history for a user"""
+    if not os.path.exists(USER_FILE):
+        return []
+    
+    try:
+        with open(USER_FILE, 'r') as file:
+            users = json.load(file)
+            
+        if username in users:
+            # Handle both old and new formats
+            if isinstance(users[username], dict):
+                return users[username].get('login_history', [])
+            else:
+                return [datetime.now().isoformat()]  # Legacy format
+        return []
+    
+    except:
+        return []
 
 def login():
     """Authenticate existing user and record login time"""
@@ -169,7 +230,9 @@ def login():
             users[username] = {
                 'password_hash': hashed_input,
                 'created_at': datetime.now().isoformat(),
-                'login_history': [datetime.now().isoformat()]
+                'created_by': 'system',
+                'login_history': [datetime.now().isoformat()],
+                'password_changed': True
             }
             
             # Save updated user data
@@ -193,6 +256,13 @@ def login():
             json.dump(users, file, indent=4)
         
         print("\nLogin successful!")
+        
+        # Check if password needs to be changed
+        if not user_data.get('password_changed', True):
+            print("\nWARNING: Please change your temporary password!")
+            # Add password change functionality here later
+            input("Press Enter to continue to medicine search...")
+            
         return True
     
     print("\nInvalid username or password")
