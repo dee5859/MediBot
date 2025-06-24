@@ -42,7 +42,6 @@ def parse_drug_data(api_data, drug_name):
         'dosage': drug_data.get('dosage_and_administration', ['Not available'])[0],
         'ingredients': ', '.join(openfda.get('substance_name', [])) or 'Not available',
         'warnings': drug_data.get('warnings_and_cautions', ['Not available'])[0],
-        'mechanism': drug_data.get('mechanism_of_action', ['Not available'])[0],
         'last_updated': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
@@ -56,11 +55,9 @@ def display_drug_info(drug_info):
     print(f"Brand Name: {drug_info.get('name', 'Not available')}")
     print(f"Generic Name: {drug_info.get('generic_name', 'Not available')}")
     print(f"\nPrimary Uses:\n{drug_info.get('uses', 'Not available')}")
-    print(f"\nMechanism of Action:\n{drug_info.get('mechanism', 'Not available')}")
     print(f"\nDosage Information:\n{drug_info.get('dosage', 'Not available')}")
     print(f"\nActive Ingredients: {drug_info.get('ingredients', 'Not available')}")
     print(f"\nSide Effects:\n{drug_info.get('side_effects', 'Not available')}")
-    print(f"\nWarnings:\n{drug_info.get('warnings', 'Not available')}")
     print(f"\nInformation Last Updated: {drug_info.get('last_updated', 'Not available')}")
     print("=" * 40)
 

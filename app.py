@@ -8,13 +8,12 @@ from flask import Flask, request, jsonify, session, render_template
 import requests
 from functools import wraps
 
-# Set up Flask app with correct template and static folders
 app = Flask(
     __name__,
     template_folder='templates',
     static_folder='static'
 )
-app.secret_key = 'your_secret_key_here'  # Change this for production!
+app.secret_key = 'your_secret_key_here'  
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 if not os.path.exists(DATA_DIR):
@@ -24,7 +23,7 @@ USER_FILE = os.path.join(DATA_DIR, 'users.json')
 SEARCH_HISTORY_FILE = os.path.join(DATA_DIR, 'search_history.json')
 
 ADMIN_USERNAME = "medadmin"
-ADMIN_PASSWORD = "Deeadmin@123"  # Change this in production!
+ADMIN_PASSWORD = "Deeadmin@123"  
 
 API_URL = "https://api.fda.gov/drug/label.json"
 
@@ -82,7 +81,6 @@ def login():
     user_data = users[username]
     hashed_input = hashlib.sha256(password.encode()).hexdigest()
 
-    # Support old format (just hash string)
     if isinstance(user_data, str):
         if user_data == hashed_input:
             users[username] = {
@@ -99,7 +97,6 @@ def login():
         else:
             return jsonify({'success': False, 'message': 'Invalid username or password'})
 
-    # New format
     if user_data.get('password_hash') == hashed_input:
         user_data.setdefault('login_history', []).append(datetime.now().isoformat())
         save_users(users)
@@ -159,8 +156,6 @@ def search_drugs():
             'side_effects': drug_data.get('warnings', ['Not available'])[0],
             'dosage': drug_data.get('dosage_and_administration', ['Not available'])[0],
             'ingredients': ', '.join(openfda.get('substance_name', [])) or 'Not available',
-            'warnings': drug_data.get('warnings_and_cautions', ['Not available'])[0],
-            'mechanism': drug_data.get('mechanism_of_action', ['Not available'])[0],
             'last_updated': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
     save_search_history(session['username'], drug_name, bool(drug_info))
@@ -240,7 +235,7 @@ def get_user_history():
     return jsonify({'success': True, 'history': user_history})
 
 if __name__ == '__main__':
-    # Create empty files if missing
+
     if not os.path.exists(USER_FILE):
         with open(USER_FILE, 'w') as f:
             json.dump({}, f)

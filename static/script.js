@@ -127,15 +127,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success && data.drug_info) {
                 let d = data.drug_info;
                 infoDiv.innerHTML = `
-                    <strong>Name:</strong> ${d.name}<br>
-                    <strong>Generic Name:</strong> ${d.generic_name}<br>
-                    <strong>Uses:</strong> ${d.uses}<br>
-                    <strong>Side Effects:</strong> ${d.side_effects}<br>
-                    <strong>Dosage:</strong> ${d.dosage}<br>
-                    <strong>Ingredients:</strong> ${d.ingredients}<br>
-                    <strong>Warnings:</strong> ${d.warnings}<br>
-                    <strong>Mechanism:</strong> ${d.mechanism}<br>
-                    <strong>Last Updated:</strong> ${d.last_updated}
+                    <strong>Name:</strong> <br>${d.name}<br>
+                    <strong>Generic Name:</strong><br> ${d.generic_name}<br>
+                    <strong>Uses:</strong><br> ${d.uses}<br>
+                    <strong>Side Effects:</strong><br> ${d.side_effects}<br>
+                    <strong>Dosage:</strong><br> ${d.dosage}<br>
+                    <strong>Ingredients:</strong><br> ${d.ingredients}<br>
+                    <strong>Warnings:</strong> <br>${d.warnings}<br>
+                    <strong>Mechanism:</strong> <br>${d.mechanism}<br>
+                    <strong>Last Updated:</strong> <br>${d.last_updated}
                 `;
             } else {
                 infoDiv.textContent = data.message || "No information found.";
