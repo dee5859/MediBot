@@ -4,44 +4,29 @@ import hashlib
 import random
 import string
 from datetime import datetime
-from flask import Flask, request, jsonify, session, send_from_directory, redirect, url_for
+from flask import Flask, request, jsonify, session, render_template
 import requests
 from functools import wraps
 
-app = Flask(__name__, static_folder='static')
-app.secret_key = 'your_secret_key_here'  # Change this in production!
+# Set up Flask app with correct template and static folders
+app = Flask(
+    __name__,
+    template_folder='templates',
+    static_folder='static'
+)
+app.secret_key = 'your_secret_key_here'  # Change this for production!
 
-USER_FILE = "users.json"
-SEARCH_HISTORY_FILE = "search_history.json"
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
+
+USER_FILE = os.path.join(DATA_DIR, 'users.json')
+SEARCH_HISTORY_FILE = os.path.join(DATA_DIR, 'search_history.json')
 
 ADMIN_USERNAME = "medadmin"
 ADMIN_PASSWORD = "Deeadmin@123"  # Change this in production!
 
 API_URL = "https://api.fda.gov/drug/label.json"
-
-PASSWORD_REQUIREMENTS = {
-    'min_length': 8,
-    'require_upper': True,
-    'require_lower': True,
-    'require_digit': True,
-    'require_special': True,
-    'allowed_special': '!@#$%^&*()-_=+[]{}|;:,.<>?'
-}
-
-def validate_password(password):
-    errors = []
-    if len(password) < PASSWORD_REQUIREMENTS['min_length']:
-        errors.append(f"Password must be at least {PASSWORD_REQUIREMENTS['min_length']} characters")
-    if PASSWORD_REQUIREMENTS['require_upper'] and not any(c.isupper() for c in password):
-        errors.append("Password must contain at least one uppercase letter")
-    if PASSWORD_REQUIREMENTS['require_lower'] and not any(c.islower() for c in password):
-        errors.append("Password must contain at least one lowercase letter")
-    if PASSWORD_REQUIREMENTS['require_digit'] and not any(c.isdigit() for c in password):
-        errors.append("Password must contain at least one digit")
-    if PASSWORD_REQUIREMENTS['require_special']:
-        if not any(c in PASSWORD_REQUIREMENTS['allowed_special'] for c in password):
-            errors.append(f"Password must contain at least one special character: {PASSWORD_REQUIREMENTS['allowed_special']}")
-    return errors
 
 def load_users():
     if not os.path.exists(USER_FILE):
@@ -82,9 +67,8 @@ def admin_required(f):
     return decorated
 
 @app.route('/')
-def root():
-    # Serve the frontend index.html
-    return send_from_directory(app.static_folder, 'index.html')
+def home():
+    return render_template('index.html')
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -153,7 +137,7 @@ def search_drugs():
     if not drug_name:
         return jsonify({'success': False, 'message': 'Drug name required'})
     params = {
-        "search": f'openfda.brand_name:"{drug_name}" OR openfda.generic_name:"{drug_name}"',
+        "search": f'openfda.brand_name:"{drug_name}" OR openfda.generic_name:"{drug_name}" OR openfda.substance_name:"{drug_name}"',
         "limit": 1
     }
     try:
@@ -196,7 +180,8 @@ def create_user():
     users = load_users()
     if username in users:
         return jsonify({'success': False, 'message': f"Username '{username}' already exists"})
-    password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+    all_chars = string.ascii_letters + string.digits + '!@#$%^&*()-_=+[]{}|;:,.<>?'
+    password = ''.join(random.choices(all_chars, k=12))
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
     users[username] = {
         'password_hash': hashed_password,
@@ -222,7 +207,8 @@ def reset_password():
     users = load_users()
     if username not in users:
         return jsonify({'success': False, 'message': f"User '{username}' does not exist"})
-    new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+    all_chars = string.ascii_letters + string.digits + '!@#$%^&*()-_=+[]{}|;:,.<>?'
+    new_password = ''.join(random.choices(all_chars, k=12))
     hashed_password = hashlib.sha256(new_password.encode()).hexdigest()
     users[username]['password_hash'] = hashed_password
     users[username]['password_changed'] = False
@@ -252,11 +238,6 @@ def get_user_history():
             history = []
     user_history = [h for h in history if h['username'] == session['username']]
     return jsonify({'success': True, 'history': user_history})
-
-# Serve static files (index.html, script.js, etc.)
-@app.route('/<path:path>')
-def static_proxy(path):
-    return send_from_directory(app.static_folder, path)
 
 if __name__ == '__main__':
     # Create empty files if missing

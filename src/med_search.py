@@ -4,25 +4,21 @@ import json
 import os
 from datetime import datetime
 
-# FDA Drug API - no key required
 API_URL = "https://api.fda.gov/drug/label.json"
-CACHE_FILE = "med_cache.json"
-SEARCH_HISTORY_FILE = "search_history.json"
+SEARCH_HISTORY_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'search_history.json')
+CACHE_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'med_cache.json')
 
 def search_medicine():
-    """Get medicine name from user"""
     print("\n" + "=" * 40)
     print("MEDICINE INFORMATION SEARCH".center(40))
     print("=" * 40)
     return input("Enter medicine name (or 'exit' to quit): ").strip()
 
 def fetch_drug_info(drug_name):
-    """Fetch drug information from FDA API"""
     params = {
-        "search": f'openfda.brand_name:"{drug_name}" OR openfda.generic_name:"{drug_name}"',
+        "search": f'openfda.brand_name:"{drug_name}" OR openfda.generic_name:"{drug_name}" OR openfda.substance_name:"{drug_name}"',
         "limit": 1
     }
-    
     try:
         response = requests.get(API_URL, params=params)
         response.raise_for_status()
@@ -30,22 +26,14 @@ def fetch_drug_info(drug_name):
     except requests.exceptions.RequestException as e:
         print(f"\nAPI Error: {str(e)}")
         return None
-    params={
-        "search": f'(openfda.brand_name:"{drug_name}" OR openfda.generic_name:"{drug_name}" OR openfda.substance_name:{drug_name}")', "limit": 5
-    }
 
 def parse_drug_data(api_data, drug_name):
-    """Extract relevant information from API response"""
     if not api_data or 'results' not in api_data or not api_data['results']:
         return None
-    
     drug_data = api_data['results'][0]
     openfda = drug_data.get('openfda', {})
-    
-    # Get brand name or generic name
     brand_name = openfda.get('brand_name', [''])[0] if openfda.get('brand_name') else ''
     generic_name = openfda.get('generic_name', [''])[0] if openfda.get('generic_name') else ''
-    
     return {
         'name': brand_name or generic_name or drug_name,
         'generic_name': ', '.join(openfda.get('generic_name', [])) or 'Not available',
@@ -59,11 +47,9 @@ def parse_drug_data(api_data, drug_name):
     }
 
 def display_drug_info(drug_info):
-    """Display drug information in terminal"""
     if not drug_info:
         print("\nNo information found for this medicine.")
         return
-    
     print("\n" + "=" * 40)
     print("MEDICINE INFORMATION".center(40))
     print("=" * 40)
@@ -79,23 +65,18 @@ def display_drug_info(drug_info):
     print("=" * 40)
 
 def save_search_history(username, drug_name, success):
-    """Save search history to file"""
     history = load_search_history()
-    
     entry = {
         'username': username,
         'drug_name': drug_name,
         'timestamp': datetime.now().isoformat(),
         'success': success
     }
-    
     history.append(entry)
-    
     with open(SEARCH_HISTORY_FILE, 'w') as f:
         json.dump(history, f, indent=2)
 
 def load_search_history():
-    """Load search history from file"""
     if os.path.exists(SEARCH_HISTORY_FILE):
         try:
             with open(SEARCH_HISTORY_FILE, 'r') as f:
