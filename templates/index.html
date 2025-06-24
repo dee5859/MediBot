@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediBot Web Interface</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --medibot-blue: #1a73e8;
+            --medibot-light: #e8f0fe;
+            --medibot-dark: #0d47a1;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .medibot-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .medibot-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .header-gradient {
+            background: linear-gradient(90deg, var(--medibot-blue), var(--medibot-dark));
+            color: white;
+            padding: 2rem 0;
+        }
+        
+        .btn-medibot {
+            background: var(--medibot-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .btn-medibot:hover {
+            background: var(--medibot-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 115, 232, 0.4);
+        }
+        
+        .search-box {
+            background: var(--medibot-light);
+            border-radius: 50px;
+            padding: 10px 20px;
+            border: 2px solid #d2e3fc;
+        }
+        
+        .drug-card {
+            border-left: 4px solid var(--medibot-blue);
+            background: white;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .drug-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-pills .nav-link.active {
+            background: var(--medibot-blue);
+            border-radius: 50px;
+        }
+        
+        .history-item {
+            border-bottom: 1px solid #eee;
+            padding: 12px 0;
+        }
+        
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .floating-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-heartbeat me-2"></i>MediBot
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3 d-none d-md-block">Welcome, <span id="username">Guest</span></span>
+                <button class="btn btn-sm btn-outline-light" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <!-- Login Screen (Initial View) -->
+        <div id="loginView">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="medibot-card p-5 text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-lock fa-3x text-primary mb-3"></i>
+                            <h2>MediBot Authentication</h2>
+                            <p class="text-muted">Secure access to medicine information</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="usernameInput" class="form-label text-start w-100">Username</label>
+                            <input type="text" class="form-control form-control-lg" id="usernameInput" placeholder="Enter your username">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="passwordInput" class="form-label text-start w-100">Password</label>
+                            <input type="password" class="form-control form-control-lg" id="passwordInput" placeholder="Enter your password">
+                        </div>
+                        
+                        <button class="btn btn-medibot w-100 py-3 mb-3" id="loginBtn">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </button>
+                        
+                        <div class="text-center mt-4">
+                            <button class="btn btn-link" id="adminLoginBtn">
+                                <i class="fas fa-user-shield me-1"></i>Admin Login
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Menu (After Login) -->
+        <div id="mainMenu" class="d-none">
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold">MediBot Terminal System</h1>
+                <p class="lead text-muted">Access medicine information securely</p>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="medibot-card h-100 p-4 text-center">
+                        <div class="icon-wrapper bg-primary mb-4 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                            <i class="fas fa-pills fa-2x text-white"></i>
+                        </div>
+                        <h3>Medicine Search</h3>
+                        <p class="text-muted">Search for drug information by brand or generic name</p>
+                        <button class="btn btn-medibot mt-3" id="searchBtn">Search Now</button>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="medibot-card h-100 p-4 text-center">
+                        <div class="icon-wrapper bg-success mb-4 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                            <i class="fas fa-tools fa-2x text-white"></i>
+                        </div>
+                        <h3>Admin Tools</h3>
+                        <p class="text-muted">Manage users, passwords, and system settings</p>
+                        <button class="btn btn-medibot mt-3" id="adminBtn">Admin Panel</button>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="medibot-card h-100 p-4 text-center">
+                        <div class="icon-wrapper bg-info mb-4 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                            <i class="fas fa-history fa-2x text-white"></i>
+                        </div>
+                        <h3>Search History</h3>
+                        <p class="text-muted">View your previous medicine searches</p>
+                        <button class="btn btn-medibot mt-3" id="historyBtn">View History</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medicine Search Interface -->
+        <div id="searchView" class="d-none">
+            <div class="medibot-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0">Medicine Information Search</h2>
+                    <button class="btn btn-outline-secondary" id="backToMainFromSearch">
+                        <i class="fas fa-arrow-left me-1"></i>Back
+                    </button>
+                </div>
+                
+                <div class="search-box mb-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control border-0 bg-transparent" id="drugSearchInput" placeholder="Enter medicine name (e.g., Aspirin)">
+                        <button class="btn btn-medibot" id="searchDrugBtn">
+                            <i class="fas fa-search me-1"></i>Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="searchResults" class="fade-in">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+
+        <!-- Admin Tools Interface -->
+        <div id="adminView" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Admin Tools</h2>
+                <button class="btn btn-outline-secondary" id="backToMainFromAdmin">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Main
+                </button>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="medibot-card p-3">
+                        <div class="nav flex-column nav-pills" id="adminTabs" role="tablist">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#createUserTab">
+                                <i class="fas fa-user-plus me-2"></i>Create User
+                            </button>
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#userListTab">
+                                <i class="fas fa-users me-2"></i>User List
+                            </button>
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#resetPasswordTab">
+                                <i class="fas fa-key me-2"></i>Reset Password
+                            </button>
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#loginHistoryTab">
+                                <i class="fas fa-history me-2"></i>Login History
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-9">
+                    <div class="tab-content" id="adminTabContent">
+                        <!-- Create User Tab -->
+                        <div class="tab-pane fade show active" id="createUserTab">
+                            <div class="medibot-card p-4">
+                                <h4><i class="fas fa-user-plus me-2"></i>Create New User</h4>
+                                <div class="mb-3 mt-4">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="newUsername">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Temporary Password</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="tempPassword" value="Tmp@12345" readonly>
+                                        <button class="btn btn-outline-secondary" id="generatePasswordBtn">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button class="btn btn-medibot">
+                                    <i class="fas fa-save me-1"></i>Create User
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Other admin tabs would go here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="btn btn-medibot btn-lg rounded-pill floating-btn d-none" id="actionBtn">
+        <i class="fas fa-bolt me-2"></i>Quick Action
+    </button>
+
+    <!-- Bootstrap & jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Your separated JS file -->
+    <script src="script.js"></script>
+</body>
+</html>
